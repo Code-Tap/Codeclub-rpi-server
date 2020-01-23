@@ -1,0 +1,32 @@
+FROM armv7/armhf-ubuntu:yakkety
+
+MAINTAINER Gary Ritchie gary@garyritchie.com
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -q -y install
+nano
+sudo
+net-tools
+wireless-tools
+lighttpd
+php-cgi
+git
+&& apt-get clean
+
+RUN lighty-enable-mod fastcgi-php RUN /etc/init.d/lighttpd restart
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -q -y install
+wget
+unzip
+hostapd
+bridge-utils
+hostap-utils
+iw
+dnsmasq
+wpasupplicant
+&& apt-get clean RUN echo 'www-data ALL=(ALL) NOPASSWD: ALL\n%www-date ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/www-data
+
+RUN chmod 0440 /etc/sudoers.d/www-data RUN git clone https://github.com/billz/raspap-webgui /var/www/ap RUN chown -R www-data:www-data /var/www
+
+EXPOSE 80 EXPOSE 100
+
+ENTRYPOINT ["lighttpd", "-D", "-f", "/etc/lighttpd/lighttpd.conf"]

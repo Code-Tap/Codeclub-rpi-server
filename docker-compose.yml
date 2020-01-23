@@ -1,0 +1,143 @@
+version: "3"
+services:
+  codeserver:
+    build: "."
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD=codeclub #optional
+      - SUDO_PASSWORD=codeclub #optional
+    volumes:
+      - ./codeclub/codeserver:/config
+    ports:
+      - "8443"
+    restart: unless-stopped
+
+  nodered:
+    image: nodered/node-red
+    volumes:
+        - ./codeclub/nodered:/data
+    ports:
+        - "1880"
+    restart: unless-stopped
+
+  icecoder:
+    image: nimmis/icecoder
+    volumes:
+      - ./codeclub/icecoder:/config
+    ports:
+      - "9998:8443"
+    
+  gpiod:
+    # https://gpiozero.readthedocs.io/en/stable/remote_gpio.html
+    image: corbosman/pigpiod
+    # build: "./gpiod"
+    privileged: true
+    restart: unless-stopped
+
+  psitransfer:
+    image: psitrax/psitransfer
+    container_name: psitransfer
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - PSITRANSFER_ADMIN_PASS=codeclub
+    ports:
+      - 3500:3500
+    volumes:
+      - ./uploads:/data
+
+  gotify:
+    container_name: gotify
+    image: gotify/server
+    restart: unless-stopped
+    volumes:
+      - ./codeclub/gotify/data:/app/data
+    ports:
+      - "8500:80"
+
+  heimdall:
+    image: linuxserver/heimdall
+    container_name: heimdall
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+    volumes:
+      - ./codeclub/heimdall:/config
+    ports:
+      - 80:80
+      # - 443:443
+    restart: unless-stopped
+
+  duckdns:
+    image: linuxserver/duckdns
+    container_name: duckdns
+    environment:
+      - PUID=1000 #optional
+      - PGID=1000 #optional
+      - TZ=Europe/London
+      - SUBDOMAINS=codeclub  #,subdomain2
+      - TOKEN=fca54c9a-696d-4d01-99aa-f937204bce62
+      - LOG_FILE=false #optional
+    # volumes:
+    #   - /path/to/appdata/config:/config #optional
+    restart: unless-stopped
+
+  balancer:
+    # remove this if it causes an issue
+    image: 'dockercloud/haproxy:latest'
+    links:
+      - codeserver
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - '9999:80'
+
+  balancer2:
+    # remove this if it causes an issue
+    image: 'dockercloud/haproxy:latest'
+    links:
+      - nodered
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - '9998:80'
+
+  # transfer:
+  #   image: dutchcoders/transfer.sh:latest 
+  #   containername: transfersh 
+  #   volumes:
+  #     - ./altuploads:/tmp/
+  #   command: "--provider local --basedir /tmp/"
+
+  # raspap:
+  # build: ".Dockerfile-raspap"
+  # ports:
+  #   - "80:80"
+  #   - "100:100"
+  # restart: unless-stopped
+
+  mongodb:
+    image: mongo:latest
+    restart: unless-stopped
+    container_name: mongodbcc
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    ports:
+      - "27017"
+    command: "mongod --bind_ip_all --logpath=/dev/null"
+
+  mysql:
+    image: mysql:latest
+    restart: unless-stopped
+    container_name: mysqlcc
+    environment:
+      MYSQL_DATABASE: 'db'
+      MYSQL_USER: 'codeclub'
+      MYSQL_PASSWORD: 'codeclub'
+      MYSQL_ROOT_PASSWORD: 'root'
+    ports:
+      - "3306"
