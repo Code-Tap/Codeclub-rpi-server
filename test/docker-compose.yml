@@ -1,0 +1,12 @@
+version: '2.2'
+services:
+  reverse-proxy:
+    image: nginx:1.15-alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 8080:8080
+  app:
+    # A container that exposes an API to show its IP address
+    image: containous/whoami
+    scale: 4

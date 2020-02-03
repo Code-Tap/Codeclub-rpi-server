@@ -1,0 +1,31 @@
+version: "2.2"
+services:
+  nodered:
+    image: nodered/node-red
+    volumes:
+      - ../codeclub/nodered:/data
+    ports:
+      - "1880"
+    environment: 
+      - REDIS_URL=redis://cache
+    restart: unless-stopped
+    scale: 5
+    networks:
+      - primarynet1
+
+  nginx:
+    image: nginx:latest
+    restart: always
+    container_name: nginxNR
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - nodered
+    ports:
+      - "9999:80"
+    networks:
+      - primarynet1
+
+networks:
+  primarynet1:
+    name: service_net
